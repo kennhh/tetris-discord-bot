@@ -40,9 +40,13 @@ class TetrisGame:
         shape_type = random.choice(list(Shape))
         self.current_shape = shape_type.value
         self.current_block = Block[shape_type.name]
-        self.current_pos = (0, self.WIDTH // 2)
-        x, y = self.current_pos #was going to use for game over logic
+        min_x = min(dx for dx, dy in self.current_shape)
+        max_y = max(dy for dx, dy in self.current_shape)
+        self.current_pos = (abs(min_x), self.WIDTH // 2 - max_y)
         self.has_swapped_this_turn = False
+        x, y = self.current_pos
+        if any(self.grid[x + dx][y + dy] != Block.EMPTY for dx, dy in self.current_shape):
+            raise GameOver(Exception)
 
     def tick(self):
         x, y = self.current_pos
@@ -69,9 +73,9 @@ class TetrisGame:
 
     def move(self, direction):
         x, y = self.current_pos
-        if direction == "left" and all(0 <= y + dy - 1 for dx, dy in self.current_shape):
+        if direction == "left" and all(0 <= y + dy - 1 and self.grid[x + dx][y + dy - 1] == Block.EMPTY for dx, dy in self.current_shape):
             self.current_pos = (x, y - 1)
-        elif direction == "right" and all(y + dy + 1 < self.WIDTH for dx, dy in self.current_shape):
+        elif direction == "right" and all(y + dy + 1 < self.WIDTH and self.grid[x + dx][y + dy + 1] == Block.EMPTY for dx, dy in self.current_shape):
             self.current_pos = (x, y + 1)
 
     def rotate(self):
@@ -112,15 +116,16 @@ class TetrisGame:
         else:
             self.current_shape, self.held_shape = self.held_shape, self.current_shape
             self.current_block, self.held_block = self.held_block, self.current_block
-            self.current_pos = (0, self.WIDTH // 2)
+            min_x = min(dx for dx, dy in self.current_shape)
+            max_y = max(dy for dx, dy in self.current_shape)
+            self.current_pos = (abs(min_x), self.WIDTH // 2 - max_y)
         self.has_swapped_this_turn = True
 
     def get_held_block_visual(self):
         grid = [[Block.EMPTY for _ in range(4)] for _ in range(4)]
-        if self.held_shape is None:
-            return '\n'.join(''.join(cell.value for cell in row) for row in grid)
-        for dx, dy in self.held_shape:
-            grid[dx + 1][dy + 1] = self.held_block
+        if self.held_shape is not None:
+            for dx, dy in self.held_shape:
+                grid[dx + 1][dy + 1] = self.held_block
         return '\n'.join(''.join(cell.value for cell in row) for row in grid)
 
 class GameOver(Exception):

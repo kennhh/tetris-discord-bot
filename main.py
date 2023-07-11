@@ -39,7 +39,19 @@ async def game_task(ctx, message):
         await message.edit(embed=embed.to_dict())
     except GameOver:
         game_task.stop()
-        await ctx.send("placeholder", epheremeal=True)
+        game_field = interactions.EmbedField(
+            name=f'game over | score: {game.score}',
+            value=game.draw(),
+            inline= True
+        )
+        hold_field = interactions.EmbedField(
+            name='holding',
+            value=game.get_held_block_visual(),
+            inline=True
+        )
+        embed = interactions.Embed(fields=[game_field, hold_field])
+        await message.edit(embed=embed.to_dict(), components=[])
+        game.__init__()
 
 
 @slash_command(name='tetris', description='start a game of tetris')
@@ -80,6 +92,7 @@ async def start(ctx: SlashContext):
             )
         )
     ]
+    empty_hold_field = '\n'.join([':black_large_square:' * 4 for _ in range(4)])
     game_field = interactions.EmbedField(
         name='score: 0',
         value=game.draw(),
@@ -87,10 +100,7 @@ async def start(ctx: SlashContext):
     )
     hold_field = interactions.EmbedField(
         name='holding',
-        value=  ':black_large_square::black_large_square::black_large_square::black_large_square:\n'
-                ':black_large_square::black_large_square::black_large_square::black_large_square:\n'
-                ':black_large_square::black_large_square::black_large_square::black_large_square:\n'
-                ':black_large_square::black_large_square::black_large_square::black_large_square:\n', #i know
+        value= empty_hold_field,
         inline=True
     )
     embed = interactions.Embed(fields=[game_field, hold_field])
